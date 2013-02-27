@@ -1,8 +1,8 @@
 {
     "name": "dmishh/recaptcha",
-    "description": "reCAPTCHA form field integration",
+    "description": "Yet another reCAPTCHA PHP implementation",
     "keywords": ["recaptcha"],
-    "homepage": "https://github.com/dmishh/recaptcha",
+    "homepage": "https://github.com/dmishh/Recaptcher",
     "type": "library",
     "license": "MIT",
     "authors": [
@@ -16,7 +16,6 @@
         "php": ">=5.3.3"
     },
     "autoload": {
-        "psr-0": { "Dmishh\\Component": "" }
-    },
-    "target-dir": "Dmishh/Component"
+        "psr-0": { "Recaptcher": "src/" }
+    }
 }

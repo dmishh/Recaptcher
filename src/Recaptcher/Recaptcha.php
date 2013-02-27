@@ -1,17 +1,17 @@
 <?php
 /**
- * This file is part of the DmishhRecaptcha package.
+ * This file is part of the Recaptcher package.
  *
  * (c) Dmitriy Scherbina
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-namespace Dmishh\Component\Recaptcha;
+namespace Recaptcher;
 
-use Dmishh\Component\Recaptcha\Exception\RecaptchaException;
+use Recaptcher\Exception\Exception;
 
-class Recaptcha
+class Recaptcha implements RecaptchaInterface
 {
     const SERVER_URL = 'http://www.google.com/recaptcha/api';
     const SECURE_SERVER_URL = 'https://www.google.com/recaptcha/api';
@@ -40,7 +40,7 @@ class Recaptcha
      * @param string $publicKey
      * @param string $privateKey
      * @param bool $useHttps
-     * @throws Exception\RecaptchaException
+     * @throws RecaptchaException
      */
     public function __construct($publicKey, $privateKey, $useHttps = false)
     {
@@ -56,7 +56,7 @@ class Recaptcha
     /**
      * @return string
      */
-    public function getChallengeUrl()
+    private function getChallengeUrl()
     {
         return $this->getServerUrl() . '/challenge?k=' . $this->publicKey;
     }
@@ -64,7 +64,7 @@ class Recaptcha
     /**
      * @return string
      */
-    public function getIFrameUrl()
+    private function getIFrameUrl()
     {
         return $this->getServerUrl() . '/noscript?k=' . $this->publicKey;
     }
@@ -72,7 +72,7 @@ class Recaptcha
     /**
      * @return string
      */
-    public function getServerUrl()
+    private function getServerUrl()
     {
         return $this->useHttps ? self::SECURE_SERVER_URL : self::SERVER_URL;
     }
@@ -138,7 +138,7 @@ class Recaptcha
      * @param string $path
      * @param array $data
      * @param int $port port
-     * @throws Exception\RecaptchaException
+     * @throws RecaptchaException
      * @return array response
      */
     private function httpPost($host, $path, $data, $port = 80)
