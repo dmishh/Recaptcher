@@ -40,12 +40,12 @@ class Recaptcha implements RecaptchaInterface
      * @param string $publicKey
      * @param string $privateKey
      * @param bool $useHttps
-     * @throws RecaptchaException
+     * @throws Exception
      */
     public function __construct($publicKey, $privateKey, $useHttps = false)
     {
         if (!$publicKey || !$privateKey) {
-            throw new RecaptchaException('Please provide reCAPTCHA keys');
+            throw new Exception('Please provide reCAPTCHA keys');
         }
 
         $this->publicKey = $publicKey;
@@ -84,18 +84,18 @@ class Recaptcha implements RecaptchaInterface
      * @param string $challenge_val
      * @param string $response_val
      * @param array $extra_params an array of extra variables to post to the server
-     * @throws RecaptchaException
+     * @throws Exception
      * @return bool
      */
     public function checkAnswer($remote_ip, $challenge_val, $response_val, $extra_params = array())
     {
         if ($remote_ip == null || $remote_ip == '') {
-            throw new RecaptchaException('You must pass the remote ip to reCAPTCHA');
+            throw new Exception('You must pass the remote ip to reCAPTCHA');
         }
 
         // discard spam submissions
         if ($challenge_val == null || strlen($challenge_val) == 0 || $response_val == null || strlen($response_val) == 0) {
-            throw new RecaptchaException('Please, enter reCAPTCHA');
+            throw new Exception('Please, enter reCAPTCHA');
         }
 
         $response = $this->httpPost(self::VERIFY_SERVER, '/recaptcha/api/verify',
@@ -112,7 +112,7 @@ class Recaptcha implements RecaptchaInterface
         if (trim($result[0]) == 'true') {
             return true;
         } else {
-            throw new RecaptchaException($result[1]);
+            throw new Exception($result[1]);
         }
     }
 
@@ -138,7 +138,7 @@ class Recaptcha implements RecaptchaInterface
      * @param string $path
      * @param array $data
      * @param int $port port
-     * @throws RecaptchaException
+     * @throws Exception
      * @return array response
      */
     private function httpPost($host, $path, $data, $port = 80)
@@ -155,7 +155,7 @@ class Recaptcha implements RecaptchaInterface
 
         $response = '';
         if (false == ($fs = @fsockopen($host, $port, $errno, $errstr, 10))) {
-            throw new RecaptchaException('Could not open socket on ' . $host . ':' . $port);
+            throw new Exception('Could not open socket on ' . $host . ':' . $port);
         }
 
         fwrite($fs, $httpRequest);
