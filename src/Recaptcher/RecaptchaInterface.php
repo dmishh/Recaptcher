@@ -11,6 +11,32 @@ namespace Recaptcher;
 
 interface RecaptchaInterface
 {
+    /**
+     * Return challenge field name
+     *
+     * @return string
+     */
+    function getChallengeField();
+
+    /**
+     * Return response field name
+     *
+     * @return string
+     */
+    function getResponseField();
+
+    /**
+     * @param array $options
+     * @return string
+     */
     function getWidgetHtml(array $options = array());
-    function checkAnswer($remote_ip, $challenge_val, $response_val, $extra_params = array());
+
+    /**
+     * @param string $remote_ip
+     * @param string $challenge_val
+     * @param string $response_val
+     * @param array $extra_params
+     * @return bool
+     */
+    function checkAnswer($remote_ip, $challenge_val, $response_val, array $extra_params = array());
 }
