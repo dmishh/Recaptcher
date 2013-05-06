@@ -10,6 +10,7 @@
 namespace Recaptcher;
 
 use Recaptcher\Exception\Exception;
+use Recaptcher\Exception\InvalidRecaptchaException;
 
 class Recaptcha implements RecaptchaInterface
 {
@@ -37,7 +38,7 @@ class Recaptcha implements RecaptchaInterface
      * @param string $publicKey
      * @param string $privateKey
      * @param bool $useHttps
-     * @throws Exception
+     * @throws \Recaptcher\Exception\Exception
      */
     public function __construct($publicKey, $privateKey, $useHttps = false)
     {
@@ -51,23 +52,23 @@ class Recaptcha implements RecaptchaInterface
     }
 
     /**
-     * Calls an HTTP POST function to verify if the user's guess was correct
+     * Sends HTTP POST to server to verify user's input
      *
-     * @param string $remote_ip
-     * @param string $challenge_val
-     * @param string $response_val
-     * @param array $extra_params an array of extra variables to post to the server
-     * @throws Exception
+     * @param string $remoteIp
+     * @param string $challengeValue
+     * @param string $responseValue
+     * @param array $params an array of extra parameters to POST to the server
+     * @throws \Recaptcher\Exception\Exception
+     * @throws \Recaptcher\Exception\InvalidRecaptchaException
      * @return bool
      */
-    public function checkAnswer($remote_ip, $challenge_val, $response_val, array $extra_params = array())
+    public function checkAnswer($remoteIp, $challengeValue, $responseValue, array $params = array())
     {
-        if ($remote_ip == null || $remote_ip == '') {
+        if (!$remoteIp) {
             throw new Exception('You must pass the remote ip to reCAPTCHA');
         }
 
-        // discard spam submissions
-        if ($challenge_val == null || strlen($challenge_val) == 0 || $response_val == null || strlen($response_val) == 0) {
+        if (strlen($challengeValue) == 0 || strlen($responseValue) == 0) {
             throw new Exception('Please, enter reCAPTCHA');
         }
 
@@ -76,40 +77,46 @@ class Recaptcha implements RecaptchaInterface
             '/recaptcha/api/verify',
             array(
                 'privatekey' => $this->privateKey,
-                'remoteip' => $remote_ip,
-                'challenge' => $challenge_val,
-                'response' => $response_val
-            ) + $extra_params
+                'remoteip' => $remoteIp,
+                'challenge' => $challengeValue,
+                'response' => $responseValue
+            ) + $params
         );
 
-        $result = explode("\n", $response[1]);
-
-        if (trim($result[0]) == 'true') {
-            return true;
-        } else {
-            throw new Exception($result[1]);
+        $response = explode("\r\n\r\n", $response, 2);
+        if (!isset($response[1])) {
+            throw new Exception(sprintf('Invalid response from verify server (%s)', self::VERIFY_SERVER));
         }
+
+        // https://developers.google.com/recaptcha/docs/verify
+        $result = explode("\n", $response[1]);
+        if (trim($result[0]) !== 'true') {
+            throw new InvalidRecaptchaException($result[1]);
+        }
+
+        return true;
     }
 
     /**
      * Returns reCAPTCHA widget's HTML
      *
-     * @param array $options Widget options
-     * @return string Widget's HTML
+     * @param array $options widget options
+     * @return string
      */
     public function getWidgetHtml(array $options = array())
     {
-        $optionsHtml = '';
         if (!empty($options)) {
             $optionsHtml = '<script type="text/javascript">var RecaptchaOptions = ' . json_encode($options) . ';</script>';
+        } else {
+            $optionsHtml = '';
         }
 
         return $optionsHtml . '<script type="text/javascript" src="' . $this->getChallengeUrl() . '"></script>
 <noscript>
     <iframe src="' . $this->getIFrameUrl() . '" height="300" width="500"></iframe>
     <br/>
-    <textarea name="'. $this->getChallengeField() .'" rows="3" cols="40"></textarea>
-    <input type="hidden" name="'. $this->getResponseField() .'" value="manual_challenge"/>
+    <textarea name="' . $this->getChallengeField() . '" rows="3" cols="40"></textarea>
+    <input type="hidden" name="' . $this->getResponseField() . '" value="manual_challenge"/>
 </noscript>';
     }
 
@@ -154,38 +161,36 @@ class Recaptcha implements RecaptchaInterface
     }
 
     /**
-     * Submits an HTTP POST
+     * Sends an HTTP POST and returns response
      *
      * @param string $host
      * @param string $path
      * @param array $data
-     * @param int $port port
+     * @param int $port
      * @throws \Recaptcher\Exception\Exception
-     * @return array response
+     * @return array
      */
     private function httpPost($host, $path, $data, $port = 80)
     {
-        $qs = http_build_query($data);
+        $queryString = http_build_query($data);
 
-        $request = "POST $path HTTP/1.0\r\n";
-        $request .= "Host: $host\r\n";
-        $request .= "Content-Type: application/x-www-form-urlencoded;\r\n";
-        $request .= "Content-Length: " . strlen($qs) . "\r\n";
-        $request .= "User-Agent: reCAPTCHA/PHP\r\n\r\n";
-        $request .= $qs;
+        $request = "POST $path HTTP/1.0\r\n" .
+            "Host: $host\r\n" .
+            "Content-Type: application/x-www-form-urlencoded;\r\n" .
+            "Content-Length: " . strlen($queryString) . "\r\n" .
+            "User-Agent: reCAPTCHA/PHP\r\n\r\n" .
+            $queryString;
 
         $response = '';
-        if (false == ($fs = @fsockopen($host, $port, $errno, $errstr, 10))) {
+        if (false == ($fs = @fsockopen($host, $port, $errno, $errstr, 5))) {
             throw new Exception('Could not open socket on ' . $host . ':' . $port);
         }
 
         fwrite($fs, $request);
-
         while (!feof($fs)) {
             $response .= fgets($fs, 1160);
-        } // One TCP-IP packet
+        }
         fclose($fs);
-        $response = explode("\r\n\r\n", $response, 2);
 
         return $response;
     }
