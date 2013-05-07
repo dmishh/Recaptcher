@@ -69,7 +69,7 @@ class Recaptcha implements RecaptchaInterface
         }
 
         if (strlen($challengeValue) == 0 || strlen($responseValue) == 0) {
-            throw new Exception('Please, enter reCAPTCHA');
+            throw new InvalidRecaptchaException('Please, enter reCAPTCHA');
         }
 
         $response = $this->httpPost(

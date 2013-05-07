@@ -11,23 +11,55 @@ namespace Recaptcher\Tests;
 
 use Recaptcher\Recaptcha;
 use Recaptcher\Exception\Exception;
+use Recaptcher\Exception\InvalidRecaptchaException;
 
 class RecaptchaTest extends \PHPUnit_Framework_TestCase
 {
-    public function testConstructor()
+    /**
+     * @expectedException \Recaptcher\Exception\Exception
+     */
+    public function testConstructorWithEmptyPublicKey()
     {
-        try {
-            $recaptcha = new Recaptcha('', '123');
-            $this->fail('Public key must be provided');
-        } catch (Exception $e) {
-        }
+        $recaptcha = new Recaptcha('', '123');
+    }
 
-        try {
-            $recaptcha = new Recaptcha('123', '');
-            $this->fail('Private key must be provided');
-        } catch (Exception $e) {
-        }
+    /**
+     * @expectedException \Recaptcher\Exception\Exception
+     */
+    public function testConstructorWithEmptyPrivateKey()
+    {
+        $recaptcha = new Recaptcha('123', '');
+    }
 
+    public function testConstructorWithValidKeys()
+    {
         $this->assertInstanceOf('\Recaptcher\Recaptcha', new Recaptcha('123', '321'));
+    }
+
+    /**
+     * @expectedException \Recaptcher\Exception\Exception
+     */
+    public function testCheckAnswerWithWrongIp()
+    {
+        $recaptcha = new Recaptcha('123', '321');
+        $recaptcha->checkAnswer('', 'challenge_val', 'response_val');
+    }
+ 
+    /**
+     * @expectedException \Recaptcher\Exception\InvalidRecaptchaException
+     */
+    public function testCheckAnswerWithWrongChallengeValue()
+    {
+        $recaptcha = new Recaptcha('123', '321');
+        $recaptcha->checkAnswer('127.0.0.1', '', 'response_val');
+    }
+ 
+    /**
+     * @expectedException \Recaptcher\Exception\InvalidRecaptchaException
+     */
+    public function testCheckAnswerWithWrongResponseValue()
+    {
+        $recaptcha = new Recaptcha('123', '321');
+        $recaptcha->checkAnswer('127.0.0.1', 'challenge_val', '');
     }
 }
