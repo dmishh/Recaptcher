@@ -22,22 +22,22 @@ class Recaptcha implements RecaptchaInterface
     /**
      * @var string
      */
-    private $publicKey;
+    protected $publicKey;
 
     /**
      * @var string
      */
-    private $privateKey;
+    protected $privateKey;
 
     /**
      * @var boolean
      */
-    private $useHttps;
+    protected $useHttps;
 
     /**
      * @param string $publicKey
      * @param string $privateKey
-     * @param bool $useHttps
+     * @param bool   $useHttps
      * @throws \Recaptcher\Exception\Exception
      */
     public function __construct($publicKey, $privateKey, $useHttps = false)
@@ -57,7 +57,7 @@ class Recaptcha implements RecaptchaInterface
      * @param string $remoteIp
      * @param string $challengeValue
      * @param string $responseValue
-     * @param array $params an array of extra parameters to POST to the server
+     * @param array  $params an array of extra parameters to POST to the server
      * @throws \Recaptcher\Exception\Exception
      * @throws \Recaptcher\Exception\InvalidRecaptchaException
      * @return bool
@@ -139,7 +139,7 @@ class Recaptcha implements RecaptchaInterface
     /**
      * @return string
      */
-    private function getChallengeUrl()
+    protected function getChallengeUrl()
     {
         return $this->getServerUrl() . '/challenge?k=' . $this->publicKey;
     }
@@ -147,7 +147,7 @@ class Recaptcha implements RecaptchaInterface
     /**
      * @return string
      */
-    private function getIFrameUrl()
+    protected function getIFrameUrl()
     {
         return $this->getServerUrl() . '/noscript?k=' . $this->publicKey;
     }
@@ -155,7 +155,7 @@ class Recaptcha implements RecaptchaInterface
     /**
      * @return string
      */
-    private function getServerUrl()
+    protected function getServerUrl()
     {
         return $this->useHttps ? self::SECURE_SERVER_URL : self::SERVER_URL;
     }
@@ -165,12 +165,12 @@ class Recaptcha implements RecaptchaInterface
      *
      * @param string $host
      * @param string $path
-     * @param array $data
-     * @param int $port
+     * @param array  $data
+     * @param int    $port
      * @throws \Recaptcher\Exception\Exception
      * @return array
      */
-    private function httpPost($host, $path, $data, $port = 80)
+    protected function httpPost($host, $path, $data, $port = 80)
     {
         $queryString = http_build_query($data);
 
@@ -183,7 +183,7 @@ class Recaptcha implements RecaptchaInterface
 
         $response = '';
         if (false == ($fs = @fsockopen($host, $port, $errno, $errstr, 5))) {
-            throw new Exception('Could not open socket on ' . $host . ':' . $port);
+            throw new Exception(sprintf('Could not open socket on %s:%s', array($host, $port)));
         }
 
         fwrite($fs, $request);

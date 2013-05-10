@@ -44,7 +44,7 @@ class RecaptchaTest extends \PHPUnit_Framework_TestCase
         $recaptcha = new Recaptcha('123', '321');
         $recaptcha->checkAnswer('', 'challenge_val', 'response_val');
     }
- 
+
     /**
      * @expectedException \Recaptcher\Exception\InvalidRecaptchaException
      */
@@ -53,7 +53,7 @@ class RecaptchaTest extends \PHPUnit_Framework_TestCase
         $recaptcha = new Recaptcha('123', '321');
         $recaptcha->checkAnswer('127.0.0.1', '', 'response_val');
     }
- 
+
     /**
      * @expectedException \Recaptcher\Exception\InvalidRecaptchaException
      */
@@ -61,5 +61,28 @@ class RecaptchaTest extends \PHPUnit_Framework_TestCase
     {
         $recaptcha = new Recaptcha('123', '321');
         $recaptcha->checkAnswer('127.0.0.1', 'challenge_val', '');
+    }
+
+    public function testCheckAnswerWithStubedHttpQueryWhenUserInputIsValid()
+    {
+        $recaptcha = $this->getMock('\Recaptcher\Recaptcha', array('httpPost'), array('123', '321'));
+        $recaptcha->expects($this->any())
+                  ->method('httpPost')
+                  ->will($this->returnValue("HTTP/1.1 200 OK\r\n\r\ntrue"));
+
+        $this->assertTrue($recaptcha->checkAnswer('127.0.0.1', 'challenge_val', 'response_val'));
+    }
+
+    /**
+     * @expectedException \Recaptcher\Exception\InvalidRecaptchaException
+     */
+    public function testCheckAnswerWithStubedHttpQueryWhenUserInputIsInvalid()
+    {
+        $recaptcha = $this->getMock('\Recaptcher\Recaptcha', array('httpPost'), array('123', '321'));
+        $recaptcha->expects($this->any())
+                  ->method('httpPost')
+                  ->will($this->returnValue("HTTP/1.1 200 OK\r\n\r\nfalse\r\nInvalid captcha."));
+
+        $recaptcha->checkAnswer('127.0.0.1', 'challenge_val', 'response_val');
     }
 }
