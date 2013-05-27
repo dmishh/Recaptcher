@@ -111,9 +111,12 @@ class Recaptcha implements RecaptchaInterface
             $optionsHtml = '';
         }
 
-        return $optionsHtml . '<script type="text/javascript" src="' . $this->getChallengeUrl() . '"></script>
+        // 'lang' option is buggy — we need to pass it as paremeter in the URL
+        $lang = isset($options['lang']) ? $options['lang'] : null;
+
+        return $optionsHtml . '<script type="text/javascript" src="' . $this->getChallengeUrl($lang) . '"></script>
 <noscript>
-    <iframe src="' . $this->getIFrameUrl() . '" height="300" width="500"></iframe>
+    <iframe src="' . $this->getIFrameUrl($lang) . '" height="300" width="500"></iframe>
     <br/>
     <textarea name="' . $this->getChallengeField() . '" rows="3" cols="40"></textarea>
     <input type="hidden" name="' . $this->getResponseField() . '" value="manual_challenge"/>
@@ -137,19 +140,23 @@ class Recaptcha implements RecaptchaInterface
     }
 
     /**
+     * @see https://groups.google.com/d/msg/recaptcha/o-YdYJlnRVM/RciK7IEPmRkJ
+     * @param string $lang
      * @return string
      */
-    protected function getChallengeUrl()
+    protected function getChallengeUrl($lang = null)
     {
-        return $this->getServerUrl() . '/challenge?k=' . $this->publicKey;
+        return $this->getServerUrl() . '/challenge?k=' . $this->publicKey . ($lang !== null ? '&hl=' . $lang : '');
     }
 
     /**
+     * @see https://groups.google.com/d/msg/recaptcha/o-YdYJlnRVM/RciK7IEPmRkJ
+     * @param string $lang
      * @return string
      */
-    protected function getIFrameUrl()
+    protected function getIFrameUrl($lang = null)
     {
-        return $this->getServerUrl() . '/noscript?k=' . $this->publicKey;
+        return $this->getServerUrl() . '/noscript?k=' . $this->publicKey . ($lang !== null ? '&hl=' . $lang : '');
     }
 
     /**

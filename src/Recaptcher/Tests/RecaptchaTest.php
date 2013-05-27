@@ -20,7 +20,7 @@ class RecaptchaTest extends \PHPUnit_Framework_TestCase
      */
     public function testConstructorWithEmptyPublicKey()
     {
-        $recaptcha = new Recaptcha('', '123');
+        new Recaptcha('', '123');
     }
 
     /**
@@ -28,12 +28,24 @@ class RecaptchaTest extends \PHPUnit_Framework_TestCase
      */
     public function testConstructorWithEmptyPrivateKey()
     {
-        $recaptcha = new Recaptcha('123', '');
+        new Recaptcha('123', '');
     }
 
     public function testConstructorWithValidKeys()
     {
         $this->assertInstanceOf('\Recaptcher\Recaptcha', new Recaptcha('123', '321'));
+    }
+
+    public function testGetChallengeField()
+    {
+        $recaptcha = new Recaptcha('123', '321');
+        $this->assertEquals('recaptcha_challenge_field', $recaptcha->getChallengeField());
+    }
+
+    public function testGetResponseField()
+    {
+        $recaptcha = new Recaptcha('123', '321');
+        $this->assertEquals('recaptcha_response_field', $recaptcha->getResponseField());
     }
 
     /**
@@ -63,7 +75,7 @@ class RecaptchaTest extends \PHPUnit_Framework_TestCase
         $recaptcha->checkAnswer('127.0.0.1', 'challenge_val', '');
     }
 
-    public function testCheckAnswerWithStubedHttpQueryWhenUserInputIsValid()
+    public function testCheckAnswerWithStubbedHttpQueryWhenUserInputIsValid()
     {
         $recaptcha = $this->getMock('\Recaptcher\Recaptcha', array('httpPost'), array('123', '321'));
         $recaptcha->expects($this->any())
@@ -76,7 +88,7 @@ class RecaptchaTest extends \PHPUnit_Framework_TestCase
     /**
      * @expectedException \Recaptcher\Exception\InvalidRecaptchaException
      */
-    public function testCheckAnswerWithStubedHttpQueryWhenUserInputIsInvalid()
+    public function testCheckAnswerWithStubbedHttpQueryWhenUserInputIsInvalid()
     {
         $recaptcha = $this->getMock('\Recaptcher\Recaptcha', array('httpPost'), array('123', '321'));
         $recaptcha->expects($this->any())
@@ -84,5 +96,57 @@ class RecaptchaTest extends \PHPUnit_Framework_TestCase
                   ->will($this->returnValue("HTTP/1.1 200 OK\r\n\r\nfalse\r\nInvalid captcha."));
 
         $recaptcha->checkAnswer('127.0.0.1', 'challenge_val', 'response_val');
+    }
+
+    /**
+     * @expectedException \Recaptcher\Exception\Exception
+     */
+    public function testCheckAnswerWithStubbedHttpQueryWhenResponseIsInvalid()
+    {
+        $recaptcha = $this->getMock('\Recaptcher\Recaptcha', array('httpPost'), array('123', '321'));
+        $recaptcha->expects($this->any())
+                  ->method('httpPost')
+                  ->will($this->returnValue("SOME STRANGE RESPONSE"));
+
+        $recaptcha->checkAnswer('127.0.0.1', 'challenge_val', 'response_val');
+    }
+
+    /**
+     * @covers \Recaptcher\Recaptcha::getServerUrl
+     * @covers \Recaptcher\Recaptcha::getChallengeUrl
+     * @covers \Recaptcher\Recaptcha::getIFrameUrl
+     * @covers \Recaptcher\Recaptcha::getWidgetHtml
+     */
+    public function testGetWidgetHtml()
+    {
+        $recaptcha = new Recaptcha('123', '321');
+
+        // options
+        $options = array('theme' => 'red');
+        $this->assertNotSame(
+            false,
+            strpos(
+                $recaptcha->getWidgetHtml($options),
+                '<script type="text/javascript">var RecaptchaOptions = ' . json_encode($options)
+            )
+        );
+
+        // challenge url with lang
+        $this->assertNotSame(
+            false,
+            strpos(
+                $recaptcha->getWidgetHtml(array('lang' => 'ru')),
+                '<script type="text/javascript" src="http://www.google.com/recaptcha/api/challenge?k=123&hl=ru"'
+            )
+        );
+
+        // iframe url
+        $this->assertNotSame(
+            false,
+            strpos(
+                $recaptcha->getWidgetHtml(),
+                '<iframe src="http://www.google.com/recaptcha/api/noscript?k=123"'
+            )
+        );
     }
 }
